@@ -6,6 +6,7 @@ Modul als Schnittstelle zur Kommunikation mit Telegram Bot API
 
 import json
 import requests
+from os import path
 
 API_URL = "https://api.telegram.org/bot"
 
@@ -15,6 +16,7 @@ class Bot:
         self.token = token
         self.botuser = None
         self.result = None
+        self.file_ids = {}
 
     def get_me(self):
         """Auslesen der Botinformationen
@@ -77,13 +79,35 @@ class Bot:
 
         url = "{}{}/sendMessage".format(API_URL, self.token)
         r = requests.get(url, params=params)
+        check_results(r, "send_message")
+        return r
 
-        # Rückmeldung der Sendung
-        result = r.json()
-        if result["ok"]:
-            pass  # Todo: Logging einbauen
+    def send_photo(self, chat_id, photo):
+        r = None
+        new_file_id = False
+        data = {"chat_id": chat_id}
+        url = "{}{}/sendPhoto".format(API_URL, self.token)
+        if photo in self.file_ids:
+            data["photo"] = self.file_ids[photo]
+            r = requests.get(url, params=data)
+        elif path.isfile(photo):
+            files = {"photo": open(photo, "rb")}
+            r = requests.post(url, files=files, data=data)
+            new_file_id = True
         else:
-            print("Senden der Nachricht fehlgeschlagen")
+            try:
+                anfrage = requests.get(photo)
+            except requests.exceptions.MissingSchema:
+                pass
+            else:
+                if "image" in anfrage.headers["Content-Type"] or "text" in anfrage.headers["Content-Type"]:
+                    data["photo"] = photo
+                    r = requests.get(url, params=data)
+                    new_file_id = True
+        result = check_results(r, "send_photo")
+        if new_file_id:
+            self.file_ids[str(photo)] = result["result"]["photo"][0]["file_id"]
+        return r
 
     def get_updates(self, offset: int = None, limit: int = None, timeout: int = None, allowed_updates=None):
         """ Funktion zum Empfangen von neuen Nachrichten"""
@@ -159,3 +183,14 @@ def force_reply(selective=None):
             raise TypeError("Nur Boolean erlaubt")
     reply_markup = json.dumps(daten)
     return reply_markup
+
+
+def check_results(result, text):
+    result = result.json()
+    if result["ok"]:
+        print("{} erfolgreich".format(text))  # Todo: Logging einbauen
+        print(result)
+    else:
+        print("{} fehlgeschlagen".format(text))
+        print(result)
+    return result
