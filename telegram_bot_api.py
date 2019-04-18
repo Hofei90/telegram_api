@@ -17,6 +17,7 @@ class Bot:
         self.botuser = None
         self.result = None
         self.file_ids = {}
+        self.max_update_id = 0
 
     def get_me(self):
         """Auslesen der Botinformationen
@@ -79,8 +80,8 @@ class Bot:
 
         url = "{}{}/sendMessage".format(API_URL, self.token)
         r = requests.get(url, params=params)
-        check_results(r, "send_message")
-        return r
+        result = check_results(r, "send_message")
+        return result
 
     def send_photo(self, chat_id, photo):
         r = None
@@ -107,41 +108,59 @@ class Bot:
         result = check_results(r, "send_photo")
         if new_file_id:
             self.file_ids[str(photo)] = result["result"]["photo"][0]["file_id"]
-        return r
+        return result
 
-    def get_updates(self, offset: int = None, limit: int = None, timeout: int = None, allowed_updates=None):
+    def get_updates(self, offset: int = None, limit: int = None, timeout: int = None, allowed_updates=None,
+                    automatic_set_max_update_id: bool = True):
         """ Funktion zum Empfangen von neuen Nachrichten"""
         # Update anhand der Parameter vorbereiten
         url = "{}{}/getUpdates".format(API_URL, self.token)
-        if isinstance(offset, int):
-            url += "?offset={}".format(offset)
-        else:
-            raise TypeError("Nur Integer erlaubt!")
-        if isinstance(limit, int):
-            if 0 <= limit <= 100:
-                url += "?limit={}".format(limit)
+        if automatic_set_max_update_id:
+            offset = self.max_update_id
+        if offset is not None:
+            if isinstance(offset, int):
+                url += "?offset={}".format(offset)
             else:
-                raise ValueError("Nur Zahlenbereich zwischen 0-100 erlaubt")
-        if isinstance(timeout, int):
-            url += "?timeout={}".format(timeout)
-        else:
-            raise TypeError("Nur Integer erlaubt!")
+                raise TypeError("Nur Integer erlaubt!")
+        if limit is not None:
+            if isinstance(limit, int):
+                if 0 <= limit <= 100:
+                    url += "?limit={}".format(limit)
+                else:
+                    raise ValueError("Nur Zahlenbereich zwischen 0-100 erlaubt")
+        if timeout is not None:
+            if isinstance(timeout, int):
+                url += "?timeout={}".format(timeout)
+            else:
+                raise TypeError("Nur Integer erlaubt!")
         if allowed_updates is not None:
             url += "?allowed_updates={}".format(allowed_updates)
 
         # Update abholen
         r = requests.get(url)
         self.result = r.json()
+        if self.result["ok"]:
+            self.set_max_update_id(self.result["result"])
+
+        for message in self.result["result"]:
+            yield message
         # Todo: Logging einbauen print(self.result)
+
+    def set_max_update_id(self, result):
+        update_ids = [update_id["update_id"] for update_id in result]
+        if update_ids:
+            self.max_update_id = max([update_id["update_id"] for update_id in result]) + 1
+        else:
+            self.max_update_id = None
 
 
 def reply_keyboard_markup(data, resize_keyboard=None, one_time_keyboard=None, selective=None):
     """Funktion zur Erstellung der reply_markup Variable zur Übermittlung an die API
     data Format:
     Listindex 0: Keyboardfelder (Typ Liste) Kann alleine übermittelt werden
-    Listindex 1: 
+    Listindex 1:
     Beispiel:  [["Taste 1", ["Option1", "Option2"]], ["Taste 2"]]"""
-   
+
     keyboard = {}
     buttons = []
     for daten in data:
@@ -161,7 +180,7 @@ def reply_keyboard_markup(data, resize_keyboard=None, one_time_keyboard=None, se
         keyboard["selective"] = selective
     reply_markup = json.dumps(keyboard)
     return reply_markup
-    
+
 
 def reply_keyboard_remove(selective=None):
     keyboard = {"remove_keyboard": True}
