@@ -29,7 +29,8 @@ class Bot:
         Returns:
 
         Bei erfolgreicher Abfrage: True
-        Bei fehlerhafter Abfrage: False"""
+        Bei fehlerhafter Abfrage: False
+        """
 
         # Informationen abholen
         url = "{}{}/getMe".format(API_URL, self.token)
@@ -55,13 +56,11 @@ class Bot:
         text: Inhalt der Nachricht
         parse_mode: optional, Stringinhalt nur "HTML" oder "Markdown", gibt an ob die Nachricht Formatierungen enthält
         disable_web_page_preview: optional,
-        disable_notification: optional,
-        reply_to_message_id: optional,
-        reply_markup: optional,
+        disable_notification: optional, Senden ohne Benachrichtigung
+        reply_to_message_id: optional, wenn die Nachricht eine Antwort ist, ID der ursprünglichen Nachricht.
+        reply_markup: optional, Additional interface options
 
-        Returns:
-        True: Sendung erfolgreich versendet
-        False: Sendung fehlerhaft
+        Returns: Result from Telegram
         """
 
         params = {"chat_id": str(chat_id)}
@@ -85,6 +84,19 @@ class Bot:
 
     def send_photo(self, chat_id, photo, caption: str = None, parse_mode: str = None, disable_notification: bool = None,
                    reply_to_message_id: int = None, reply_markup=None):
+        """Funktion zur Übermittlung von Photos
+
+        :param chat_id: ID des Chats zur Übermittlung der Nachricht
+        :param photo: Zu sendenden Photo
+        :param caption: optional, Bildunterschrift (kann auch beim erneuten Senden von Fotos über file_id
+        verwendet werden), 0-1024 Zeichen
+        :param parse_mode: optional, Stringinhalt nur "HTML" oder "Markdown",
+        gibt an ob die Nachricht Formatierungen enthält
+        :param disable_notification: optional, Senden ohne Benachrichtigung
+        :param reply_to_message_id: optional, wenn die Nachricht eine Antwort ist, ID der ursprünglichen Nachricht.
+        :param reply_markup: optional, Additional interface options
+        :return: Result from Telegram
+        """
         r = None
         new_file_id = False
         data = {"chat_id": chat_id}
@@ -114,7 +126,7 @@ class Bot:
 
     def get_updates(self, offset: int = None, limit: int = None, timeout: int = None, allowed_updates=None,
                     automatic_set_max_update_id: bool = True):
-        """ Funktion zum Empfangen von neuen Nachrichten"""
+        """Funktion zum Empfangen von neuen Nachrichten"""
         # Update anhand der Parameter vorbereiten
         url = "{}{}/getUpdates".format(API_URL, self.token)
         if automatic_set_max_update_id:
@@ -160,7 +172,8 @@ def reply_keyboard_markup(data, resize_keyboard=None, one_time_keyboard=None, se
     data Format:
     Listindex 0: Keyboardfelder (Typ Liste) Kann alleine übermittelt werden
     Listindex 1:
-    Beispiel:  [["Taste 1", ["Option1", "Option2"]], ["Taste 2"]]"""
+    Beispiel:  [["Taste 1", ["Option1", "Option2"]], ["Taste 2"]]
+    """
 
     keyboard = {}
     buttons = []
@@ -219,13 +232,27 @@ def check_results(result, text):
 def send_photo_data_creation(data: dict, caption: str, parse_mode: str, disable_notification: bool,
                              reply_to_message_id: int, reply_markup):
     if caption is not None:
-        data["caption"] = caption
+        if isinstance(caption, str):
+            if len(caption) <= 1024:
+                data["caption"] = caption
+                raise ValueError("Maximal 1024 Zeichen erlaubt")
+        else:
+            raise TypeError("Nur String aktzeptiert")
     if parse_mode is not None:
-        data["parse_mode"] = parse_mode
+        if isinstance(parse_mode, str):
+            data["parse_mode"] = parse_mode
+        else:
+            raise TypeError("Nur String aktzeptiert")
     if disable_notification is not None:
-        data["disable_notification"] = disable_notification
+        if isinstance(disable_notification, bool):
+            data["disable_notification"] = disable_notification
+        else:
+            raise TypeError("Nur bool Werte erlaubt")
     if reply_to_message_id is not None:
-        data["reply_to_message_id"] = reply_to_message_id
+        if isinstance(reply_to_message_id, int):
+            data["reply_to_message_id"] = reply_to_message_id
+        else:
+            raise TypeError("Nur Integer erlaubt")
     if reply_markup is not None:
         data["reply_markup"] = reply_markup
 
