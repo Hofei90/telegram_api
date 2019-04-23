@@ -82,7 +82,8 @@ class Bot:
         check_results(r, "send_message")
         return r
 
-    def send_photo(self, chat_id, photo):
+    def send_photo(self, chat_id, photo, caption: str = None, parse_mode: str = None, disable_notification: bool = None,
+                   reply_to_message_id: int = None, reply_markup = None):
         r = None
         new_file_id = False
         data = {"chat_id": chat_id}
@@ -100,7 +101,7 @@ class Bot:
             except requests.exceptions.MissingSchema:
                 pass
             else:
-                if "image" in anfrage.headers["Content-Type"] or "text" in anfrage.headers["Content-Type"]:
+                if "image" in anfrage.headers["Content-Type"]:
                     data["photo"] = photo
                     r = requests.get(url, params=data)
                     new_file_id = True
