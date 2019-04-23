@@ -84,10 +84,11 @@ class Bot:
         return result
 
     def send_photo(self, chat_id, photo, caption: str = None, parse_mode: str = None, disable_notification: bool = None,
-                   reply_to_message_id: int = None, reply_markup = None):
+                   reply_to_message_id: int = None, reply_markup=None):
         r = None
         new_file_id = False
         data = {"chat_id": chat_id}
+        send_photo_data_creation(data, caption, parse_mode, disable_notification, reply_to_message_id, reply_markup)
         url = "{}{}/sendPhoto".format(API_URL, self.token)
         if photo in self.file_ids:
             data["photo"] = self.file_ids[photo]
@@ -143,9 +144,8 @@ class Bot:
         if self.result["ok"]:
             self.set_max_update_id(self.result["result"])
 
-        for message in self.result["result"]:
-            yield message
-        # Todo: Logging einbauen print(self.result)
+        messages = [message for message in self.result["result"]]
+        return messages
 
     def set_max_update_id(self, result):
         update_ids = [update_id["update_id"] for update_id in result]
@@ -214,3 +214,19 @@ def check_results(result, text):
         print("{} fehlgeschlagen".format(text))
         print(result)
     return result
+
+
+def send_photo_data_creation(data: dict, caption: str, parse_mode: str, disable_notification: bool,
+                             reply_to_message_id: int, reply_markup):
+    if caption is not None:
+        data["caption"] = caption
+    if parse_mode is not None:
+        data["parse_mode"] = parse_mode
+    if disable_notification is not None:
+        data["disable_notification"] = disable_notification
+    if reply_to_message_id is not None:
+        data["reply_to_message_id"] = reply_to_message_id
+    if reply_markup is not None:
+        data["reply_markup"] = reply_markup
+
+
