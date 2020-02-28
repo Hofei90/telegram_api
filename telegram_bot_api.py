@@ -166,6 +166,59 @@ class Bot:
         else:
             self.max_update_id = None
 
+    # Umfrageoptionen
+    def send_poll(self, chat_id: int or str, question: str, options: list,
+                  is_anonymous: bool = None, type_: str = None, allows_multiple_answers: bool = None,
+                  correct_option_id: int = None, is_closed: bool = None, disable_notifaction: bool = None,
+                  reply_to_message_id: int = None, reply_markup=None):
+        params = {"chat_id": str(chat_id)}
+        if isinstance(question, str):
+            params["question"] = question
+        if isinstance(options, list):
+            params["options"] = json.dumps(options)
+        if isinstance(is_anonymous, bool):
+            params["is_anonymous"] = is_anonymous
+        if isinstance(type_, str):
+            params["type_"] = type_
+        if isinstance(allows_multiple_answers, bool):
+            params["allows_multiple_answers"] = allows_multiple_answers
+        if isinstance(correct_option_id, int):
+            params["correct_option_id"] = correct_option_id
+        if isinstance(is_closed, bool):
+            params["is_closed"] = is_closed
+        if isinstance(disable_notifaction, bool):
+            params["disable_notifaction"] = disable_notifaction
+        if isinstance(reply_to_message_id, int):
+            params["reply_to_message_id"] = reply_to_message_id
+        if reply_markup is not None:
+            params["reply_markup"] = reply_markup
+
+        url = "{}{}/sendPoll".format(API_URL, self.token)
+        r = requests.get(url, params=params)
+        result = check_results(r, "send_poll")
+        return result
+
+    def edit_message_text(self, chat_id: str or int, message_id: int, text: str, parse_mode: str = None,
+                          disable_web_page_preview: bool = None, reply_markup=None):
+        """Nur messsage_id aktuell unterstützt, kein inline_message"""
+
+        params = {"chat_id": str(chat_id)}
+        if isinstance(message_id, int):
+            params["message_id"] = message_id
+        if isinstance(text, str):
+            params["text"] = text
+        if isinstance(parse_mode, str):
+            params["pars_mode"] = parse_mode
+        if isinstance(disable_web_page_preview, bool):
+            params["disable_web_page_preview"] = disable_web_page_preview
+        if reply_markup is not None:
+            params["reply_markup"] = reply_markup
+
+        url = "{}{}/editMessageText".format(API_URL, self.token)
+        r = requests.get(url, params=params)
+        result = check_results(r, "send_message")
+        return result
+
 
 def reply_keyboard_markup(data, resize_keyboard=None, one_time_keyboard=None, selective=None):
     """Funktion zur Erstellung der reply_markup Variable zur Übermittlung an die API
