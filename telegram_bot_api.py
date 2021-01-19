@@ -180,6 +180,30 @@ class Bot:
         result = check_results(r, "send_poll")
         return result
 
+    def edit_message_text(self, text: str, chat_id: str or int = None, message_id: int = None,
+                          inline_message_id: str = None, parse_mode: str = None, entities: list = None,
+                          disable_web_page_preview: bool = None, reply_markup=None):
+        params = {"text": text}
+        if isinstance(chat_id, (str, int)):
+            params["chat_id"] = chat_id
+        if isinstance(message_id, int):
+            params["message_id"] = message_id
+        if isinstance(inline_message_id, str):
+            params["inline_message_id"] = inline_message_id
+        if isinstance(parse_mode, str):
+            params["parse_mode"] = parse_mode
+        if isinstance(entities, list):
+            params["entities"] = entities
+        if isinstance(disable_web_page_preview, bool):
+            params["disable_web_page_preview"] = disable_web_page_preview
+        if reply_markup is not None:
+            params["reply_markup"] = reply_markup
+
+        url = "{}{}/edit_message_text".format(API_URL, self.token)
+        r = requests.get(url, params=params)
+        result = check_results(r, "edit_message_text")
+        return result
+
 
 def reply_keyboard_markup(data, resize_keyboard=None, one_time_keyboard=None, selective=None):
     """Funktion zur Erstellung der reply_markup Variable zur Übermittlung an die API
