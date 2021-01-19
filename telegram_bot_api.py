@@ -199,7 +199,7 @@ class Bot:
         if reply_markup is not None:
             params["reply_markup"] = reply_markup
 
-        url = "{}{}/edit_message_text".format(API_URL, self.token)
+        url = "{}{}/editMessageText".format(API_URL, self.token)
         r = requests.get(url, params=params)
         result = check_results(r, "edit_message_text")
         return result
