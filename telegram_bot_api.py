@@ -166,6 +166,20 @@ class Bot:
         else:
             self.max_update_id = None
 
+    def send_poll(self, chat_id: str or int, question: str, options: list, is_anonymous: bool):
+        params = {"chat_id": str(chat_id)}
+        if isinstance(question, str):
+            params["question"] = question
+        if isinstance(options, list):
+            params["options"] = json.dumps(options)
+        if isinstance(is_anonymous, bool):
+            params["is_anonymous"] = is_anonymous
+
+        url = "{}{}/sendPoll".format(API_URL, self.token)
+        r = requests.get(url, params=params)
+        result = check_results(r, "send_poll")
+        return result
+
 
 def reply_keyboard_markup(data, resize_keyboard=None, one_time_keyboard=None, selective=None):
     """Funktion zur Erstellung der reply_markup Variable zur Übermittlung an die API
