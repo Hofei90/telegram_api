@@ -166,11 +166,13 @@ class Bot:
         else:
             self.max_update_id = None
 
+
     # Umfrageoptionen
     def send_poll(self, chat_id: int or str, question: str, options: list,
                   is_anonymous: bool = None, type_: str = None, allows_multiple_answers: bool = None,
                   correct_option_id: int = None, is_closed: bool = None, disable_notifaction: bool = None,
                   reply_to_message_id: int = None, reply_markup=None):
+
         params = {"chat_id": str(chat_id)}
         if isinstance(question, str):
             params["question"] = question
@@ -193,22 +195,27 @@ class Bot:
         if reply_markup is not None:
             params["reply_markup"] = reply_markup
 
+
+
         url = "{}{}/sendPoll".format(API_URL, self.token)
         r = requests.get(url, params=params)
         result = check_results(r, "send_poll")
         return result
 
-    def edit_message_text(self, chat_id: str or int, message_id: int, text: str, parse_mode: str = None,
+    def edit_message_text(self, text: str, chat_id: str or int = None, message_id: int = None,
+                          inline_message_id: str = None, parse_mode: str = None, entities: list = None,
                           disable_web_page_preview: bool = None, reply_markup=None):
-        """Nur messsage_id aktuell unterstützt, kein inline_message"""
-
-        params = {"chat_id": str(chat_id)}
+        params = {"text": text}
+        if isinstance(chat_id, (str, int)):
+            params["chat_id"] = chat_id
         if isinstance(message_id, int):
             params["message_id"] = message_id
-        if isinstance(text, str):
-            params["text"] = text
+        if isinstance(inline_message_id, str):
+            params["inline_message_id"] = inline_message_id
         if isinstance(parse_mode, str):
-            params["pars_mode"] = parse_mode
+            params["parse_mode"] = parse_mode
+        if isinstance(entities, list):
+            params["entities"] = entities
         if isinstance(disable_web_page_preview, bool):
             params["disable_web_page_preview"] = disable_web_page_preview
         if reply_markup is not None:
@@ -216,7 +223,7 @@ class Bot:
 
         url = "{}{}/editMessageText".format(API_URL, self.token)
         r = requests.get(url, params=params)
-        result = check_results(r, "send_message")
+        result = check_results(r, "edit_message_text")
         return result
 
 
