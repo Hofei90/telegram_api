@@ -166,8 +166,6 @@ class Bot:
         else:
             self.max_update_id = None
 
-
-    # Umfrageoptionen
     def send_poll(self, chat_id: int or str, question: str, options: list,
                   is_anonymous: bool = None, type_: str = None, allows_multiple_answers: bool = None,
                   correct_option_id: int = None, is_closed: bool = None, disable_notifaction: bool = None,
@@ -194,8 +192,6 @@ class Bot:
             params["reply_to_message_id"] = reply_to_message_id
         if reply_markup is not None:
             params["reply_markup"] = reply_markup
-
-
 
         url = "{}{}/sendPoll".format(API_URL, self.token)
         r = requests.get(url, params=params)
@@ -315,5 +311,3 @@ def send_photo_data_creation(data: dict, caption: str, parse_mode: str, disable_
             raise TypeError("Nur Integer erlaubt")
     if reply_markup is not None:
         data["reply_markup"] = reply_markup
-
-
