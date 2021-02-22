@@ -67,7 +67,7 @@ class Bot:
         if isinstance(text, str):
             params["text"] = text
         if isinstance(parse_mode, str):
-            params["pars_mode"] = parse_mode
+            params["parse_mode"] = parse_mode
         if isinstance(disable_web_page_preview, bool):
             params["disable_web_page_preview"] = disable_web_page_preview
         if isinstance(disable_notification, bool):
