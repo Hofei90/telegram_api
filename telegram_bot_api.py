@@ -8,6 +8,18 @@ import json
 import requests
 from os import path
 
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("bot.log"),
+        logging.StreamHandler()
+    ]
+)
+
 API_URL = "https://api.telegram.org/bot"
 
 
@@ -34,7 +46,7 @@ class Bot:
 
         # Informationen abholen
         url = "{}{}/getMe".format(API_URL, self.token)
-        r = requests.get(url)
+        r = secure_get(url)
         result = r.json()
 
         # Abfrage auswerten
@@ -67,7 +79,7 @@ class Bot:
         if isinstance(text, str):
             params["text"] = text
         if isinstance(parse_mode, str):
-            params["pars_mode"] = parse_mode
+            params["parse_mode"] = parse_mode
         if isinstance(disable_web_page_preview, bool):
             params["disable_web_page_preview"] = disable_web_page_preview
         if isinstance(disable_notification, bool):
@@ -78,20 +90,20 @@ class Bot:
             params["reply_markup"] = reply_markup
 
         url = "{}{}/sendMessage".format(API_URL, self.token)
-        r = requests.get(url, params=params)
+        r = secure_get(url, params=params)
         result = check_results(r, "send_message")
         return result
 
     def send_photo(self, chat_id, photo, caption: str = None, parse_mode: str = None, disable_notification: bool = None,
                    reply_to_message_id: int = None, reply_markup=None):
-        """Funktion zur Übermittlung von Photos
+        """Funktion zur Übermittlung von Fotos
 
         :param chat_id: ID des Chats zur Übermittlung der Nachricht
-        :param photo: Zu sendenden Photo
+        :param photo: Das zusendenden Foto
         :param caption: optional, Bildunterschrift (kann auch beim erneuten Senden von Fotos über file_id
         verwendet werden), 0-1024 Zeichen
         :param parse_mode: optional, Stringinhalt nur "HTML" oder "Markdown",
-        gibt an ob die Nachricht Formatierungen enthält
+        gibt an, ob die Nachricht Formatierungen enthält
         :param disable_notification: optional, Senden ohne Benachrichtigung
         :param reply_to_message_id: optional, wenn die Nachricht eine Antwort ist, ID der ursprünglichen Nachricht.
         :param reply_markup: optional, Additional interface options
@@ -104,20 +116,20 @@ class Bot:
         url = "{}{}/sendPhoto".format(API_URL, self.token)
         if photo in self.file_ids:
             data["photo"] = self.file_ids[photo]
-            r = requests.get(url, params=data)
+            r = secure_get(url, params=data)
         elif path.isfile(photo):
             files = {"photo": open(photo, "rb")}
-            r = requests.post(url, files=files, data=data)
+            r = secure_post(url, files=files, data=data)
             new_file_id = True
         else:
             try:
-                anfrage = requests.get(photo)
+                anfrage = secure_get(photo)
             except requests.exceptions.MissingSchema:
                 pass
             else:
                 if "image" in anfrage.headers["Content-Type"]:
                     data["photo"] = photo
-                    r = requests.get(url, params=data)
+                    r = secure_get(url, params=data)
                     new_file_id = True
         result = check_results(r, "send_photo")
         if new_file_id:
@@ -151,7 +163,7 @@ class Bot:
             url += "?allowed_updates={}".format(allowed_updates)
 
         # Update abholen
-        r = requests.get(url)
+        r = secure_get(url)
         self.result = r.json()
         if self.result["ok"]:
             self.set_max_update_id(self.result["result"])
@@ -194,7 +206,7 @@ class Bot:
             params["reply_markup"] = reply_markup
 
         url = "{}{}/sendPoll".format(API_URL, self.token)
-        r = requests.get(url, params=params)
+        r = secure_get(url, params=params)
         result = check_results(r, "send_poll")
         return result
 
@@ -218,7 +230,7 @@ class Bot:
             params["reply_markup"] = reply_markup
 
         url = "{}{}/editMessageText".format(API_URL, self.token)
-        r = requests.get(url, params=params)
+        r = secure_get(url, params=params)
         result = check_results(r, "edit_message_text")
         return result
 
@@ -226,7 +238,7 @@ class Bot:
 def reply_keyboard_markup(data, resize_keyboard=None, one_time_keyboard=None, selective=None):
     """Funktion zur Erstellung der reply_markup Variable zur Übermittlung an die API
     data Format:
-    Listindex 0: Keyboardfelder (Typ Liste) Kann alleine übermittelt werden
+    Listindex 0: Keyboardfelder (Typ Liste) kann alleine übermittelt werden
     Listindex 1:
     Beispiel:  [["Taste 1", ["Option1", "Option2"]], ["Taste 2"]]
     """
@@ -311,3 +323,24 @@ def send_photo_data_creation(data: dict, caption: str, parse_mode: str, disable_
             raise TypeError("Nur Integer erlaubt")
     if reply_markup is not None:
         data["reply_markup"] = reply_markup
+
+
+def secure_get(*args, **kwargs):
+    try:
+        kwargs.setdefault("timeout", 10)
+        r = requests.get(*args, **kwargs)
+        r.raise_for_status()
+        return r
+    except requests.exceptions.RequestException as e:
+        logging.error(f"GET fehlgeschlagen: {e}")
+        return None
+
+def secure_post(*args, **kwargs):
+    try:
+        kwargs.setdefault("timeout", 10)
+        r = requests.post(*args, **kwargs)
+        r.raise_for_status()
+        return r
+    except requests.exceptions.RequestException as e:
+        logging.error(f"POST fehlgeschlagen: {e}")
+        return None
