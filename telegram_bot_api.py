@@ -164,6 +164,8 @@ class Bot:
 
         # Update abholen
         r = secure_get(url)
+        if r is None:
+            return []
         self.result = r.json()
         if self.result["ok"]:
             self.set_max_update_id(self.result["result"])
@@ -327,7 +329,7 @@ def send_photo_data_creation(data: dict, caption: str, parse_mode: str, disable_
 
 def secure_get(*args, **kwargs):
     try:
-        kwargs.setdefault("timeout", 10)
+        kwargs.setdefault("timeout", (5, 15))
         r = requests.get(*args, **kwargs)
         r.raise_for_status()
         return r
@@ -337,7 +339,7 @@ def secure_get(*args, **kwargs):
 
 def secure_post(*args, **kwargs):
     try:
-        kwargs.setdefault("timeout", 10)
+        kwargs.setdefault("timeout", (5, 15))
         r = requests.post(*args, **kwargs)
         r.raise_for_status()
         return r
